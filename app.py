@@ -1,6 +1,8 @@
 from flask import Flask, jsonify, request
 
 app = Flask(__name__)
+app.config["DEFAULT_MIMETYPE"] = "application/json"
+
 
 books = [
     {
@@ -20,7 +22,7 @@ def handle_books():
 
         # validate book
         if not validate_book_data(new_book):
-            return jsonify({"error": "Invalid book data"}), 400
+            return jsonify(error="Invalid book data"), 400
 
         # add new book
         new_book["id"] = max(book["id"] for book in books) + 1
@@ -38,63 +40,39 @@ def handle_books():
     # QUERY PARAMETER: "?page=2&limit=5" -- pagination
     page = int(request.args.get("page", 1))
     limit = int(request.args.get("limit", 10))
-    if page and limit:
-        start_index = (page - 1) * limit
-        end_index = start_index + limit
-        paginated_books = books[start_index:end_index]
-        return jsonify(paginated_books)
-
-    # POST REQUEST: "{'title': '1984', 'author': 'George Orwell'}"
-    if request.method == "POST":
-        new_book = request.get_json()
-
-        # validate book
-        if not validate_book_data(new_book):
-            return jsonify({"error": "Invalid book data"}), 400
-
-        # add new book
-        new_book["id"] = max(book["id"] for book in books) + 1
-        books.append(new_book)
-        return jsonify(new_book), 201
-
-    # ELSE: return all books
-    return jsonify(books)
+    start_index = (page - 1) * limit
+    end_index = start_index + limit
+    paginated_books = books[start_index:end_index]
+    return jsonify(paginated_books)
 
 
-@app.route("/api/books/<int:id>", methods=["PUT"])
+@app.route("/api/books/<int:id>", methods=["PUT", "DELETE"])
 def handle_book(id):
     book = find_book(id)
     if book is None:
-        return "", 404
+        return jsonify(error=f"Book with ID:{id} not Found"), 404
 
-    new_data = request.get_json()
-    if not has_valid_keys(new_data):
-        return jsonify({"error": "Invalid book data"}), 400
+    if request.method == "PUT":
+        new_data = request.get_json()
+        if not has_valid_keys(new_data):
+            return jsonify(error="Invalid book data"), 400
 
-    book.update(new_data)
+        book.update(new_data)
 
-    return jsonify(book)
-
-
-@app.route("/api/books/<int:id>", methods=["DELETE"])
-def delete_book(id):
-    book = find_book(id)
-    if book is None:
-        return jsonify({"error": f"Book with ID:{id} not Found"}), 404
-
-    books.remove(book)
+    if request.method == "DELETE":
+        books.remove(book)
 
     return jsonify(book)
 
 
 @app.errorhandler(404)
 def not_found_error(error):
-    return jsonify({"error": "Not Found"}), 404
+    return jsonify(error="Not Found"), 404
 
 
 @app.errorhandler(405)
 def method_not_allowed_error(error):
-    return jsonify({"error": "Method Not Allowed"}), 405
+    return jsonify(error="Method Not Allowed"), 405
 
 
 def find_book(id):
