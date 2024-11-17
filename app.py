@@ -16,7 +16,7 @@ books = [
 
 
 @app.route("/api/books", methods=["GET", "POST"])
-@limiter.limit("10/minute")
+@limiter.limit("30/minute")
 def handle_books():
     # POST REQUEST: "{'title': '1984', 'author': 'George Orwell'}"
     if request.method == "POST":
@@ -66,6 +66,7 @@ def handle_books():
 
 
 @app.route("/api/books/<int:id>", methods=["PUT"])
+@limiter.limit("30/minute")
 def handle_book(id):
     book = find_book(id)
     if book is None:
@@ -81,6 +82,7 @@ def handle_book(id):
 
 
 @app.route("/api/books/<int:id>", methods=["DELETE"])
+@limiter.limit("30/minute")
 def delete_book(id):
     book = find_book(id)
     if book is None:
@@ -99,6 +101,11 @@ def not_found_error(error):
 @app.errorhandler(405)
 def method_not_allowed_error(error):
     return jsonify({"error": "Method Not Allowed"}), 405
+
+
+@app.errorhandler(429)
+def request_error(error):
+    return jsonify(error="Too Many Requests"), 429
 
 
 def find_book(id):
