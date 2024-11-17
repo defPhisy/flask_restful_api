@@ -1,10 +1,23 @@
+import logging
 from flask import Flask, jsonify, request
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
 app = Flask(__name__)
-limiter = Limiter(app=app, key_func=get_remote_address)
 app.config["DEFAULT_MIMETYPE"] = "application/json"
+
+# RATE LIMITER
+limiter = Limiter(app=app, key_func=get_remote_address)
+
+# LOGGING Settings
+logging.basicConfig(
+    filename="logging.log",
+    encoding="utf-8",
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s: %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+
 
 
 books = [
@@ -40,6 +53,9 @@ def handle_books():
             book for book in books if book.get("author") == author
         ]
         return jsonify(filtered_books)
+
+    # LOGGING for GET
+    app.logger.info("GET request received for /api/books")
 
     # QUERY PARAMETER: "?page=2&limit=5" -- pagination
     page = int(request.args.get("page", 1))
