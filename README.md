@@ -186,6 +186,6 @@ When the server starts, it preloads 100 sample books in the following format:
 
 ## License
 
-This project is licensed under the [MIT License]().
+This project is licensed under the [MIT License](LICENSE.md).
 
 ---
