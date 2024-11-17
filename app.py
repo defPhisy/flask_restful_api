@@ -19,7 +19,6 @@ logging.basicConfig(
 )
 
 
-
 books = [
     {
         "id": i + 1,
@@ -90,7 +89,6 @@ def delete_book(id):
     if book is None:
         return jsonify({"error": f"Book with ID:{id} not Found"}), 404
 
-    books.remove(book)
     if request.method == "DELETE":
         books.remove(book)
 
