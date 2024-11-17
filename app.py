@@ -52,7 +52,6 @@ def handle_books():
 
 @app.route("/api/books/<int:id>", methods=["PUT"])
 @limiter.limit("30/minute")
-@app.route("/api/books/<int:id>", methods=["PUT", "DELETE"])
 def handle_book(id):
     book = find_book(id)
     if book is None:
