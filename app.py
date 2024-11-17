@@ -1,6 +1,9 @@
 from flask import Flask, jsonify, request
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 app = Flask(__name__)
+limiter = Limiter(app=app, key_func=get_remote_address)
 app.config["DEFAULT_MIMETYPE"] = "application/json"
 
 
@@ -15,6 +18,7 @@ books = [
 
 
 @app.route("/api/books", methods=["GET", "POST"])
+@limiter.limit("30/minute")
 def handle_books():
     # POST REQUEST: "{'title': '1984', 'author': 'George Orwell'}"
     if request.method == "POST":
@@ -46,6 +50,8 @@ def handle_books():
     return jsonify(paginated_books)
 
 
+@app.route("/api/books/<int:id>", methods=["PUT"])
+@limiter.limit("30/minute")
 @app.route("/api/books/<int:id>", methods=["PUT", "DELETE"])
 def handle_book(id):
     book = find_book(id)
@@ -59,6 +65,17 @@ def handle_book(id):
 
         book.update(new_data)
 
+    return jsonify(book)
+
+
+@app.route("/api/books/<int:id>", methods=["DELETE"])
+@limiter.limit("30/minute")
+def delete_book(id):
+    book = find_book(id)
+    if book is None:
+        return jsonify({"error": f"Book with ID:{id} not Found"}), 404
+
+    books.remove(book)
     if request.method == "DELETE":
         books.remove(book)
 
@@ -73,6 +90,11 @@ def not_found_error(error):
 @app.errorhandler(405)
 def method_not_allowed_error(error):
     return jsonify(error="Method Not Allowed"), 405
+
+
+@app.errorhandler(429)
+def request_error(error):
+    return jsonify(error="Too Many Requests"), 429
 
 
 def find_book(id):
